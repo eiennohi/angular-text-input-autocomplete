@@ -29,10 +29,11 @@ export interface ChoiceSelectedEvent {
     'textarea[mwlTextInputAutocomplete],input[type="text"][mwlTextInputAutocomplete]'
 })
 export class TextInputAutocompleteDirective implements OnDestroy {
+  triggerCharacter: string;
   /**
    * The character that will trigger the menu to appear
    */
-  @Input() triggerCharacter = '@';
+  @Input() triggerCharacters = ['@'];
 
   /**
    * The regular expression that will match the search text after the trigger character
@@ -63,12 +64,18 @@ export class TextInputAutocompleteDirective implements OnDestroy {
   /**
    * A function that accepts a search string and returns an array of choices. Can also return a promise.
    */
-  @Input() findChoices: (searchText: string) => any[] | Promise<any[]>;
+  @Input()
+  findChoices: (
+    searchText: string,
+    triggerCharacter?: string
+  ) => any[] | Promise<any[]>;
 
   /**
    * A function that formats the selected choice once selected.
    */
-  @Input() getChoiceLabel: (choice: any) => string = choice => choice;
+  @Input()
+  getChoiceLabel: (choice: any, triggerCharacter?: any) => string = choice =>
+    choice;
 
   /* tslint:disable member-ordering */
   private menu:
@@ -90,7 +97,9 @@ export class TextInputAutocompleteDirective implements OnDestroy {
 
   @HostListener('keypress', ['$event.key'])
   onKeypress(key: string) {
-    if (key === this.triggerCharacter) {
+    const index: number = this.triggerCharacters.indexOf(key);
+    if (index !== -1) {
+      this.triggerCharacter = this.triggerCharacters[index];
       this.showMenu();
     }
   }
@@ -98,7 +107,11 @@ export class TextInputAutocompleteDirective implements OnDestroy {
   @HostListener('input', ['$event.target.value'])
   onChange(value: string) {
     if (this.menu) {
-      if (value[this.menu.triggerCharacterPosition] !== this.triggerCharacter) {
+      if (
+        this.triggerCharacters.indexOf(
+          value[this.menu.triggerCharacterPosition]
+        ) === -1
+      ) {
         this.hideMenu();
       } else {
         const cursor = this.elm.nativeElement.selectionStart;
@@ -117,7 +130,7 @@ export class TextInputAutocompleteDirective implements OnDestroy {
             this.menu.component.instance.choiceLoadError = undefined;
             this.menu.component.instance.choiceLoading = true;
             this.menu.component.changeDetectorRef.detectChanges();
-            Promise.resolve(this.findChoices(searchText))
+            Promise.resolve(this.findChoices(searchText, this.triggerCharacter))
               .then(choices => {
                 if (this.menu) {
                   this.menu.component.instance.choices = choices;
@@ -173,7 +186,7 @@ export class TextInputAutocompleteDirective implements OnDestroy {
       this.menu.component.instance.selectChoice
         .pipe(takeUntil(this.menuHidden$))
         .subscribe(choice => {
-          const label = this.getChoiceLabel(choice);
+          const label = this.getChoiceLabel(choice, this.triggerCharacter);
           const textarea: HTMLTextAreaElement = this.elm.nativeElement;
           const value: string = textarea.value;
           const startIndex = this.menu!.triggerCharacterPosition;

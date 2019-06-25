@@ -24,7 +24,7 @@ import { By } from '@angular/platform-browser';
         mwlTextInputAutocomplete
         [findChoices]="findChoices"
         [getChoiceLabel]="getChoiceLabel"
-        [triggerCharacter]="triggerCharacter"
+        [triggerCharacters]="triggerCharacters"
         [searchRegexp]="searchRegexp"
         [menuComponent]="menuComponent"
         (menuShown)="menuShown($event)"
@@ -38,7 +38,7 @@ class TestComponent {
   formControlValue = '';
   findChoices = sinon.stub().returns(['foo', 'bar', 'bam']);
   getChoiceLabel = sinon.stub().returnsArg(0);
-  triggerCharacter = '@';
+  triggerCharacters = ['@'];
   searchRegexp: string | RegExp = /^\w*$/;
   menuComponent = TextInputAutocompleteMenuComponent;
   menuShown = sinon.spy();
@@ -251,7 +251,7 @@ describe('text-input-autocomplete directive', () => {
   );
 
   it('should allow the trigger character to be changed', () => {
-    component.triggerCharacter = '/';
+    component.triggerCharacters = ['/'];
     fixture.detectChanges();
     typeInTextarea('text @b');
     expect(getMenu()).not.to.be.ok;
